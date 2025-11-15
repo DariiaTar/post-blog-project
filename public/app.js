@@ -1,184 +1,235 @@
-// public/app.js
-
-// === 1. GLOBAL VARIABLES AND ACCESS TO ELEMENTS ===
-
-const API_URL = '/api/posts';
-
-const postForm = document.getElementById('post-form');
-const postIdInput = document.getElementById('post-id');
-const titleInput = document.getElementById('title');
-const descriptionInput = document.getElementById('description');
-const authorInput = document.getElementById('author');
-const imageInput = document.getElementById('image');
-const cancelEditBtn = document.getElementById('cancel-edit');
-const imageModal = document.getElementById('image-modal');
-const modalImageSrc = document.getElementById('modal-image-src');
-const closeModalBtn = document.querySelector('.close-modal');
-const postsList = document.getElementById('posts-list');
 
 
-// === 2. LOADING AND DISPLAYING POSTS (READ) ===
-async function loadPosts() {
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Не вдалося завантажити пости');
-        
-        const posts = await response.json();
+document.addEventListener('DOMContentLoaded', () => {
+    // === 1. ELEMENT SELECTORS ===
+    const guestView = document.getElementById('guest-view');
+    const userView = document.getElementById('user-view');
+    const mainContent = document.getElementById('main-content');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const postsList = document.getElementById('posts-list');
+    const postForm = document.getElementById('post-form');
+    const postIdInput = document.getElementById('post-id');
+    const cancelEditBtn = document.getElementById('cancel-edit');
+    const imageInput = document.getElementById('image');
 
-      // Clear the list before adding new elements to it
-        postsList.innerHTML = '';
+    // Auth Modal
+    const authModal = document.getElementById('auth-modal');
+    const authModalCloseBtn = authModal.querySelector('.close-modal');
+    const authTitle = document.getElementById('auth-title');
+    const authForm = document.getElementById('auth-form');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authToggleLink = document.getElementById('auth-toggle-link');
+    const authError = document.getElementById('auth-error');
 
-      // If there are no posts, show a message
-        if (posts.length === 0) {
-            postsList.innerHTML = '<p style="text-align: center;">Постів ще немає. Створіть перший!</p>';
+    // Image Modal
+    const imageModal = document.getElementById('image-modal');
+    const modalImageSrc = document.getElementById('modal-image-src');
+    const imageModalCloseBtn = imageModal.querySelector('.close-modal');
+    
+    let user = null;
+    let isLoginMode = true;
+
+    // === 2. UI MANAGEMENT ===
+    function updateUI() {
+        if (user) {
+            guestView.classList.add('hidden');
+            userView.classList.remove('hidden');
+            mainContent.classList.remove('hidden');
+            welcomeMessage.textContent = `Вітаємо, ${user.name}!`;
+        } else {
+            guestView.classList.remove('hidden');
+            userView.classList.add('hidden');
+            mainContent.classList.add('hidden');
+        }
+        loadPosts();
+    }
+
+    // === 3. AUTHENTICATION ===
+    function checkLoginStatus() {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) { user = JSON.parse(savedUser); }
+        updateUI();
+    }
+
+    async function handleAuth(e) {
+        e.preventDefault();
+        const name = document.getElementById('auth-name').value.trim();
+        const password = document.getElementById('auth-password').value.trim();
+        if (!name || !password) {
+            authError.textContent = 'Будь ласка, заповніть усі поля.';
+            authError.classList.remove('hidden');
             return;
         }
-
-        posts.forEach(post => {
-            const postElement = document.createElement('div');
-            postElement.classList.add('post-item');
-            const imageHtml = post.imageUrl
-                ? `<img src="${post.imageUrl}" alt="Зображення поста" class="post-image">`
-                : '<div class="post-image-placeholder"></div>'; 
-
-            postElement.innerHTML = `
-                ${imageHtml}
-                <div class="post-content">
-                    <h3>${post.title}</h3>
-                    <p>${post.description}</p>
-                    <small>
-                        Автор: ${post.author} • 
-                        Опубліковано: ${new Date(post.createdAt).toLocaleString('uk-UA', { dateStyle: 'short', timeStyle: 'short' })}
-                    </small>
-                </div>
-                <div class="post-actions">
-                    <button class="edit-btn" data-id="${post._id}">Редагувати</button>
-                    <button class="delete-btn" data-id="${post._id}">Видалити</button>
-                </div>
-            `;
-            postsList.appendChild(postElement);
-        });
-    } catch (error) {
-        console.error('Помилка при завантаженні постів:', error);
-        postsList.innerHTML = '<p style="text-align: center; color: red;">Не вдалося завантажити дані. Спробуйте оновити сторінку.</p>';
+        
+        const endpoint = isLoginMode ? '/api/users/login' : '/api/users/register';
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, password }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            
+            localStorage.setItem('user', JSON.stringify(data));
+            user = data;
+            closeAuthModal();
+            updateUI();
+        } catch (error) {
+            authError.textContent = error.message;
+            authError.classList.remove('hidden');
+        }
     }
-}
-
-
-// === 3. FORM SUBMISSION PROCESSING (CREATE and UPDATE) ===
-postForm.addEventListener('submit', async (event) => {
-    event.preventDefault(); 
-    const formData = new FormData();
-    formData.append('title', titleInput.value);
-    formData.append('description', descriptionInput.value);
-    formData.append('author', authorInput.value);
-
-    if (imageInput.files[0]) {
-        formData.append('image', imageInput.files[0]);
+    
+    function handleLogout() {
+        localStorage.removeItem('user');
+        user = null;
+        updateUI();
     }
 
+    // === 4. POSTS CRUD OPERATIONS ===
+    async function loadPosts() {
+        try {
+            const response = await fetch('/api/posts');
+            const posts = await response.json();
+            postsList.innerHTML = '';
+            posts.forEach(post => {
+                const isAuthor = user && post.author === user._id;
+                const actionsHtml = isAuthor ? `
+                    <div class="post-actions">
+                        <button class="edit-btn" data-id="${post._id}">Редагувати</button>
+                        <button class="delete-btn" data-id="${post._id}">Видалити</button>
+                    </div>` : '';
+
+                const imageHtml = post.imageUrl ? `<img src="${post.imageUrl}" alt="${post.title}" class="post-image">` : '<div class="post-image-placeholder"></div>';
+
+                const postElement = document.createElement('div');
+                postElement.classList.add('post-item');
+                postElement.innerHTML = `
+                    ${imageHtml}
+                    <div class="post-content">
+                        <h3>${post.title}</h3>
+                        <p>${post.description}</p>
+                        <small>Автор: ${post.authorName} • Опубліковано: ${new Date(post.createdAt).toLocaleString('uk-UA')}</small>
+                    </div>
+                    ${actionsHtml}`;
+                postsList.appendChild(postElement);
+            });
+        } catch (error) { console.error(error); }
+    }
+
+
+async function handlePostFormSubmit(e) {
+    e.preventDefault();
     const postId = postIdInput.value;
-    const isEditing = !!postId; 
-    const url = isEditing ? `${API_URL}/${postId}` : API_URL;
-    const method = isEditing ? 'PUT' : 'POST';
+    const url = postId ? `/api/posts/${postId}` : '/api/posts';
+    const method = postId ? 'PUT' : 'POST';
+
+
+    const formData = new FormData();
+    
+    // 1. Отримуємо значення з полів і додаємо їх до formData
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    
+    formData.append('title', title);
+    formData.append('description', description);
+
+    // 2. Отримуємо файл і додаємо його, тільки якщо він обраний
+    const imageFile = document.getElementById('image').files[0];
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
+
 
     try {
         const response = await fetch(url, {
-            method: method,
+            method,
+            headers: { 'Authorization': `Bearer ${user.token}` },
             body: formData, 
         });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Не вдалося зберегти пост.');
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Не вдалося зберегти пост');
-        }
-
-        resetForm();
-        loadPosts(); 
-
+        postForm.reset();
+        postIdInput.value = '';
+        document.getElementById('cancel-edit').classList.add('hidden'); 
+        
+        loadPosts();
     } catch (error) {
-        console.error('Помилка при збереженні поста:', error);
-        alert(`Помилка: ${error.message}`);
+        alert(error.message);
     }
-});
+}
 
+    postsList.addEventListener('click', async (e) => {
+        const target = e.target;
 
-// === 4. PROCESSING ACTIONS IN THE POST LIST (DELETE, UPDATE, OPEN IMAGE) ===
-postsList.addEventListener('click', async (event) => {
-    const target = event.target;
-    const imageToOpen = target.closest('.post-image');
-    if (imageToOpen) {
-        modalImageSrc.src = imageToOpen.src; 
-        imageModal.classList.remove('hidden'); 
-        return; 
-    }
-
-    const deleteButton = target.closest('.delete-btn');
-    if (deleteButton) {
-        const id = deleteButton.dataset.id;
-        if (!confirm('Ви впевнені, що хочете видалити цей пост?')) return;
-
-        try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Не вдалося видалити пост');
-            loadPosts();
-        } catch (error) {
-            console.error('Помилка видалення:', error);
-            alert(`Помилка: ${error.message}`);
+        const imageToOpen = target.closest('.post-image');
+        if (imageToOpen) {
+            modalImageSrc.src = imageToOpen.src;
+            imageModal.classList.remove('hidden');
+            return;
         }
-        return;
+
+        const deleteButton = target.closest('.delete-btn');
+        if (deleteButton) {
+            const id = deleteButton.dataset.id;
+            if (confirm('Ви впевнені?')) {
+                try {
+                    const response = await fetch(`/api/posts/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${user.token}` }
+                    });
+                    if (!response.ok) throw new Error('Не вдалося видалити пост.');
+                    loadPosts();
+                } catch (error) { alert(error.message); }
+            }
+        }
+
+        const editButton = target.closest('.edit-btn');
+        if (editButton) {
+            // Заповнюємо форму для редагування
+            const postItem = editButton.closest('.post-item');
+            postIdInput.value = editButton.dataset.id;
+            document.getElementById('title').value = postItem.querySelector('h3').textContent;
+            document.getElementById('description').value = postItem.querySelector('p').textContent;
+            cancelEditBtn.classList.remove('hidden');
+            postForm.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    // === 5. MODAL MANAGEMENT & EVENT LISTENERS ===
+    function openAuthModal(isLogin) {
+        isLoginMode = isLogin;
+        authTitle.textContent = isLogin ? 'Вхід' : 'Реєстрація';
+        authSubmitBtn.textContent = isLogin ? 'Увійти' : 'Створити акаунт';
+        authToggleLink.innerHTML = isLogin ? 'Немає акаунту? <a href="#">Зареєструватися</a>' : 'Вже є акаунт? <a href="#">Увійти</a>';
+        authForm.reset();
+        authError.classList.add('hidden');
+        authModal.classList.remove('hidden');
     }
 
-    const editButton = target.closest('.edit-btn');
-    if (editButton) {
-        const id = editButton.dataset.id;
-        const postItem = editButton.closest('.post-item');
-        
-        const title = postItem.querySelector('h3').textContent;
-        const description = postItem.querySelector('p').textContent;
-        const author = postItem.querySelector('small').textContent.split('Автор: ')[1].split(' •')[0];
-        
-        postIdInput.value = id;
-        titleInput.value = title;
-        descriptionInput.value = description;
-        authorInput.value = author;
-        
-        cancelEditBtn.classList.remove('hidden');
-        postForm.scrollIntoView({ behavior: 'smooth' });
-        return;
-    }
-});
+    function closeAuthModal() { authModal.classList.add('hidden'); }
+    function closeImageModal() { imageModal.classList.add('hidden'); }
 
+    document.getElementById('login-btn').addEventListener('click', () => openAuthModal(true));
+    document.getElementById('register-btn').addEventListener('click', () => openAuthModal(false));
+    document.getElementById('logout-btn').addEventListener('click', handleLogout);
+    
+    authModalCloseBtn.addEventListener('click', closeAuthModal);
+    authForm.addEventListener('submit', handleAuth);
+    authToggleLink.addEventListener('click', (e) => { e.preventDefault(); openAuthModal(!isLoginMode); });
 
+    postForm.addEventListener('submit', handlePostFormSubmit);
+    cancelEditBtn.addEventListener('click', () => {
+        postForm.reset();
+        postIdInput.value = '';
+        cancelEditBtn.classList.add('hidden');
+    });
+    
+    imageModalCloseBtn.addEventListener('click', closeImageModal);
+    imageModal.addEventListener('click', e => { if (e.target === imageModal) closeImageModal(); });
 
-
-cancelEditBtn.addEventListener('click', () => {
-    resetForm();
-});
-
-function resetForm() {
-    postForm.reset(); 
-    postIdInput.value = ''; 
-    cancelEditBtn.classList.add('hidden'); 
-}
-
-
-document.addEventListener('DOMContentLoaded', loadPosts);
-
-function closeModal() {
-    imageModal.classList.add('hidden');
-}
-
-closeModalBtn.addEventListener('click', closeModal);
-
-imageModal.addEventListener('click', (event) => {
-    if (event.target === imageModal) {
-        closeModal();
-    }
-});
-
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !imageModal.classList.contains('hidden')) {
-        closeModal();
-    }
+    // === 6. INITIALIZATION ===
+    checkLoginStatus();
 });

@@ -287,3 +287,142 @@ body {
         flex-direction: column;
     }
 }
+
+.user-profile-box {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.user-profile-box label {
+    font-weight: 500;
+}
+.user-profile-box input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+}
+.user-profile-box button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--accent-green);
+    color: black;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+
+.main-nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    border: 2px solid var(--accent-green);
+    background-color: transparent;
+    color: var(--accent-green);
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nav-btn.primary {
+    background-color: var(--accent-green);
+    color: black;
+}
+.nav-btn:hover {
+    transform: scale(1.05);
+}
+
+.nav-btn.danger {
+    border-color: #ff4d4d;
+    color: #ff4d4d;
+}
+.nav-btn.danger:hover {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+#welcome-message {
+    color: white;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+
+.auth-modal-content {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    animation: zoomIn 0.3s ease-in-out;
+}
+
+.auth-modal-content h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+#auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#auth-form input {
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#auth-form button {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--primary-blue);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#auth-toggle-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+#auth-toggle-link a {
+    color: var(--primary-blue);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.error-message {
+    color: #ff4d4d;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+
+.hidden {
+    display: none !important;
+}

@@ -1,24 +1,9 @@
-// routes/postRoutes.js
+const express = require('express');
+const router = express.Router();
+const { getAllPosts, createPost, updatePost, deletePost } = require('../controllers/postController');
+const { protect } = require('../middleware/authMiddleware');
 
-const {
-  getAllPosts,
-  createPost,
-  updatePost,
-  deletePost
-} = require('../controllers/postController');
+router.route('/').get(getAllPosts).post(protect, createPost);
+router.route('/:id').delete(protect, deletePost).put(protect, updatePost);
 
-
-module.exports = function(app, upload) {
-     
-    // Route to get all posts
-    app.get('/api/posts', getAllPosts);
-
-    // Route for creating a new post with a single file from the 'image' field
-    app.post('/api/posts', upload.single('image'), createPost);
-
-    // Route for updating the post
-    app.put('/api/posts/:id', upload.single('image'), updatePost);
-
-    // Route for deleting a post
-    app.delete('/api/posts/:id', deletePost);
-};
+module.exports = router;

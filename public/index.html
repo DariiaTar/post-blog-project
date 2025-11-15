@@ -1,48 +1,76 @@
+
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Club // Posts</title>
+    <title>Pets Club // Posts</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="main-container">
+        <nav class="main-nav">
+            <div id="guest-view">
+                <button id="login-btn" class="nav-btn">Увійти</button>
+                <button id="register-btn" class="nav-btn primary">Зареєструватися</button>
+            </div>
+            <div id="user-view" class="hidden">
+                <span id="welcome-message"></span>
+                <button id="logout-btn" class="nav-btn danger">Вийти</button>
+            </div>
+        </nav>
+
         <header class="main-header">
             <h1>#PETS-CLUB<span class="header-accent">POSTS</span></h1>
         </header>
 
-        <main class="content-wrapper">
+        <main id="main-content" class="content-wrapper hidden">
+            <h2>Створити новий пост</h2>
             <form id="post-form" class="post-form">
                 <input type="hidden" id="post-id">
                 <input type="text" id="title" placeholder="Заголовок поста" required>
                 <textarea id="description" placeholder="Опис поста" rows="4" required></textarea>
-                <input type="text" id="author" placeholder="Автор" required>
                 <label for="image">Зображення (необов'язково):</label>
                 <input type="file" id="image" name="image" accept="image/*">
-                
                 <div class="form-actions">
                     <button type="submit">Зберегти пост</button>
                     <button type="button" id="cancel-edit" class="hidden">Скасувати</button>
                 </div>
             </form>
-
-            <div id="posts-list" class="posts-list">
-            </div>
         </main>
+        
+        <div id="posts-container" class="content-wrapper">
+             <h2 id="posts-title">Останні пости</h2>
+             <div id="posts-list" class="posts-list"></div>
+        </div>
     </div>
 
 
-    <script src="app.js"defer></script>
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="auth-modal-content">
+            <span class="close-modal" data-target="auth-modal">&times;</span>
+            <h2 id="auth-title">Вхід</h2>
+            <form id="auth-form">
+                <input type="text" id="auth-name" placeholder="Ім'я автора (унікальне)" required>
+                <input type="password" id="auth-password" placeholder="Пароль" required>
+                <button type="submit" id="auth-submit-btn">Увійти</button>
+                <p id="auth-error" class="error-message hidden"></p>
+            </form>
+            <p id="auth-toggle-link">Немає акаунту? <a href="#">Зареєструватися</a></p>
+        </div>
+    </div>
+
 
     <div id="image-modal" class="modal-overlay hidden">
-        <span class="close-modal">&times;</span>
+        <span class="close-modal" data-target="image-modal">&times;</span>
         <img class="modal-content" id="modal-image-src">
     </div>
+
+    <script src="app.js" defer></script>
 </body>
 </html>
